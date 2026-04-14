@@ -3,7 +3,7 @@
 import { PrismaClient } from "@/app/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { revalidatePath } from "next/cache";
-import { writeFile, unlink } from "fs/promises";
+import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { z } from "zod";
 
@@ -72,15 +72,20 @@ async function saveImage(
         return { error: "Image must be under 5MB" };
     }
 
-    const filename = file.name;
-    const destPath = path.join(process.cwd(), "public", "imgs", filename);
+    const filename = path.basename(file.name);
+    const destDir = path.join(process.cwd(), "public", "imgs");
+    const destPath = path.join(destDir, filename);
 
     try {
+        await mkdir(destDir, { recursive: true });
         const buffer = Buffer.from(await file.arrayBuffer());
         await writeFile(destPath, buffer);
         return { filename };
-    } catch {
-        return { error: "Could not save image. Make sure /public/imgs/ exists." };
+    } catch (err: unknown) {
+        console.error("saveImage error:", err);
+        return {
+            error: `Could not save image. ${err instanceof Error ? err.message : String(err)}`,
+        };
     }
 }
 
@@ -102,14 +107,7 @@ export async function createConsole(
     const imageFile = formData.get("image") as File | null;
     const oldValues = { ...rawValues };
  
-    // Validar imagen requerida
-    if (!imageFile || imageFile.size === 0) {
-        return {
-            success: false,
-            errors:  { image: "Console image is required" },
-            oldValues,
-        };
-    }
+    // ❌ ELIMINADO: validación obligatoria de imagen
  
     // Validar campos con Zod
     const parsed = ConsoleSchema.safeParse(rawValues);
@@ -122,14 +120,21 @@ export async function createConsole(
         return { success: false, errors, oldValues };
     }
  
-    // Guardar imagen
-    const imageResult = await saveImage(imageFile);
-    if ("error" in imageResult) {
-        return {
-            success: false,
-            errors:  { image: imageResult.error },
-            oldValues,
-        };
+    // ✅ Imagen opcional con fallback
+    let imageName = "no-image.jpg"; // 👈 imagen por defecto
+ 
+    if (imageFile && imageFile.size > 0) {
+        const imageResult = await saveImage(imageFile);
+ 
+        if ("error" in imageResult) {
+            return {
+                success: false,
+                errors: { image: imageResult.error },
+                oldValues,
+            };
+        }
+ 
+        imageName = imageResult.filename;
     }
  
     // Crear registro en DB
@@ -140,14 +145,14 @@ export async function createConsole(
                 manufacturer: parsed.data.manufacturer,
                 releasedate:  new Date(parsed.data.releasedate),
                 description:  parsed.data.description ?? "",
-                image:        imageResult.filename,
+                image:        imageName, // 👈 usamos la variable
             },
         });
     } catch (e: unknown) {
         if ((e as { code?: string })?.code === "P2002") {
             return {
                 success: false,
-                errors:  { name: "A console with this name already exists" },
+                errors: { name: "A console with this name already exists" },
                 oldValues,
             };
         }
@@ -161,7 +166,6 @@ export async function createConsole(
     revalidatePath("/consoles");
     return { success: true, message: "Console added successfully!" };
 }
-
 // ================================================================
 //  UPDATE CONSOLE
 // ================================================================

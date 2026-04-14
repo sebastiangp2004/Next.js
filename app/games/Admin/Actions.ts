@@ -3,7 +3,7 @@
 import { PrismaClient } from "@/app/generated/prisma";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { revalidatePath } from "next/cache";
-import { writeFile, unlink } from "fs/promises";
+import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { z } from "zod";
 
@@ -88,15 +88,20 @@ async function saveImage(
         return { error: "Image must be under 5MB" };
     }
 
-    const filename  = file.name;
-    const destPath  = path.join(process.cwd(), "public", "imgs", filename);
+    const filename = path.basename(file.name);
+    const destDir = path.join(process.cwd(), "public", "imgs");
+    const destPath = path.join(destDir, filename);
 
     try {
+        await mkdir(destDir, { recursive: true });
         const buffer = Buffer.from(await file.arrayBuffer());
         await writeFile(destPath, buffer);
         return { filename };
-    } catch {
-        return { error: "Could not save image. Make sure /public/imgs/ exists." };
+    } catch (err: unknown) {
+        console.error("saveImage error:", err);
+        return {
+            error: `Could not save image. ${err instanceof Error ? err.message : String(err)}`,
+        };
     }
 }
 
@@ -113,26 +118,19 @@ export async function createGame(
     const rawValues = {
         title:       formData.get("title")       as string,
         developer:   formData.get("developer")   as string,
-        genre:       formData.get("genre")        as string,
-        price:       formData.get("price")        as string,
-        releasedate: formData.get("releasedate")  as string,
+        genre:       formData.get("genre")       as string,
+        price:       formData.get("price")       as string,
+        releasedate: formData.get("releasedate") as string,
         description: formData.get("description") as string,
         console_id:  formData.get("console_id")  as string,
     };
 
     const coverFile = formData.get("cover") as File | null;
-    const oldValues = { ...rawValues };  // guardamos para remember old values
+    const oldValues = { ...rawValues };
 
-    // 2 — Validar cover
-    if (!coverFile || coverFile.size === 0) {
-        return {
-            success: false,
-            errors:  { cover: "Cover image is required" },
-            oldValues,
-        };
-    }
+  
 
-    // 3 — Validar campos con Zod
+    // 2 — Validar campos con Zod
     const parsed = GameSchema.safeParse(rawValues);
 
     if (!parsed.success) {
@@ -144,17 +142,24 @@ export async function createGame(
         return { success: false, errors, oldValues };
     }
 
-    // 4 — Guardar imagen
-    const imageResult = await saveImage(coverFile);
-    if ("error" in imageResult) {
-        return {
-            success: false,
-            errors:  { cover: imageResult.error },
-            oldValues,
-        };
+    // 3 — Manejar imagen (opcional)
+    let coverName = "no-cover.jpg"; // 👈 imagen por defecto
+
+    if (coverFile && coverFile.size > 0) {
+        const imageResult = await saveImage(coverFile);
+
+        if ("error" in imageResult) {
+            return {
+                success: false,
+                errors: { cover: imageResult.error },
+                oldValues,
+            };
+        }
+
+        coverName = imageResult.filename;
     }
 
-    // 5 — Crear registro en DB
+    // 4 — Crear registro en DB
     try {
         await prisma.games.create({
             data: {
@@ -164,16 +169,15 @@ export async function createGame(
                 price:       parsed.data.price,
                 releasedate: new Date(parsed.data.releasedate),
                 description: parsed.data.description ?? "",
-                cover:       imageResult.filename,  // nombre original del archivo
+                cover:       coverName, // 👈 aquí usamos la variable
                 console_id:  parsed.data.console_id,
             },
         });
     } catch (e: unknown) {
-        // P2002 = unique constraint (título duplicado)
         if ((e as { code?: string })?.code === "P2002") {
             return {
                 success: false,
-                errors:  { title: "A game with this title already exists" },
+                errors: { title: "A game with this title already exists" },
                 oldValues,
             };
         }
@@ -184,11 +188,10 @@ export async function createGame(
         };
     }
 
-    // 6 — Revalidar y devolver éxito
+    // 5 — Revalidar
     revalidatePath("/games");
     return { success: true, message: "Game added successfully!" };
 }
-
 // ================================================================
 //  UPDATE GAME
 // ================================================================
