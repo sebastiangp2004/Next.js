@@ -155,7 +155,7 @@ export default function AddConsoleModal() {
                                 {/* Name */}
                                 <div>
                                     <label className={LABEL}>Name <span className="text-error">*</span></label>
-                                    <input name="name" type="text" required placeholder="e.g. PlayStation 5" defaultValue={state.oldValues?.name ?? ""} className={fc("name")} />
+                                    <input name="name" type="text"  placeholder="e.g. PlayStation 5" defaultValue={state.oldValues?.name ?? ""} className={fc("name")} />
                                     {state.errors?.name && <p className={ERR_MSG}>⚠ {state.errors.name}</p>}
                                 </div>
 
@@ -163,12 +163,12 @@ export default function AddConsoleModal() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className={LABEL}>Manufacturer <span className="text-error">*</span></label>
-                                        <input name="manufacturer" type="text" required placeholder="e.g. Sony" defaultValue={state.oldValues?.manufacturer ?? ""} className={fc("manufacturer")} />
+                                        <input name="manufacturer" type="text"  placeholder="e.g. Sony" defaultValue={state.oldValues?.manufacturer ?? ""} className={fc("manufacturer")} />
                                         {state.errors?.manufacturer && <p className={ERR_MSG}>⚠ {state.errors.manufacturer}</p>}
                                     </div>
                                     <div>
                                         <label className={LABEL}>Release Date <span className="text-error">*</span></label>
-                                        <input name="releasedate" type="date" required defaultValue={state.oldValues?.releasedate ?? ""} className={`${fc("releasedate")} [color-scheme:dark] max-w-[130px] sm:max-w-none`} />
+                                        <input name="releasedate" type="date"  defaultValue={state.oldValues?.releasedate ?? ""} className={`${fc("releasedate")} [color-scheme:dark] max-w-[130px] sm:max-w-none`} />
                                         {state.errors?.releasedate && <p className={ERR_MSG}>⚠ {state.errors.releasedate}</p>}
                                     </div>
                                 </div>
