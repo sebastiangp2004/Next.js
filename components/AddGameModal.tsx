@@ -123,45 +123,7 @@ export default function AddGameModal({ consoles }: AddGameModalProps) {
                                     </div>
                                 )}
 
-                                {/* Cover */}
-                                <div>
-                                    <label className={LABEL}>Cover Image <span className="text-error">*</span></label>
-                                    <div
-                                        onClick={() => fileRef.current?.click()}
-                                        className={`relative w-full h-40 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden transition-all duration-200
-                                            ${preview ? "border-primary/30"
-                                                : state.errors?.cover ? "border-error/40 bg-error/[0.03] hover:border-error/60"
-                                                : "border-white/[0.08] bg-white/[0.02] hover:border-primary/30 hover:bg-white/[0.04]"
-                                            }`}
-                                    >
-                                        {preview ? (
-                                            <>
-                                                <Image src={preview} alt="Cover preview" fill className="object-contain bg-base-300" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-base-300/80 via-transparent to-transparent" />
-                                                <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
-                                                    <span className="text-[10px] font-mono text-white/70 truncate pr-2">{coverName}</span>
-                                                    <button type="button" onClick={handleClearImage} className="shrink-0 w-5 h-5 rounded bg-error/20 border border-error/30 flex items-center justify-center text-error hover:bg-error/30 transition-colors">
-                                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M18 6 6 18M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${state.errors?.cover ? "bg-error/10 border-error/20" : "bg-white/[0.04] border-white/[0.07]"}`}>
-                                                    <svg className={`w-4 h-4 ${state.errors?.cover ? "text-error/50" : "text-white/20"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                                                    </svg>
-                                                </div>
-                                                <p className={`text-[11px] font-mono uppercase tracking-widest ${state.errors?.cover ? "text-error/50" : "text-white/20"}`}>Click to upload cover</p>
-                                                <p className="text-[10px] font-mono text-white/10">JPG, PNG, WEBP · Max 5MB</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {state.errors?.cover && <p className={ERR_MSG}>⚠ {state.errors.cover}</p>}
-                                    <input ref={fileRef} name="cover" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" />
-                                </div>
+
 
                                 {/* Title */}
                                 <div>
