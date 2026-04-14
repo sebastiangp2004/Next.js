@@ -68,7 +68,7 @@ export default async function GamesInfo({ searchParams }: GamesInfoProps) {
             orderBy: { id: "asc" },
         }),
         prisma.games.count({ where }),
-        prisma.consoles.findMany({ orderBy: { name: "asc" } }),
+        prisma.consoles.findMany({ orderBy: { name: "desc" } }),
         prisma.games.findMany({
             select: { genre: true },
             distinct: ["genre"],
